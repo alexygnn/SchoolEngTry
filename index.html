@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <title>零基础盲打练习｜英语默写商用版</title>
+    <style>
+        :root {
+            --bg: #f0f8f0;
+            --card: #f8fff8;
+            --text: #204020;
+            --border: #b8d8b8;
+            --primary: #4096ff;
+            --error: #f53f3f;
+            --key-bg: #d8e8d8;
+            --key-active: #4096ff;
+            --finger-active: #ff7d00;
+            --hint-red: #ffcccc;
+            --correct-green: #67c23a;
+        }
+        .light { --bg: #f5f7fa; --card: #fff; --text: #222; --border: #dde1e8; --key-bg: #e5e7eb; }
+        .dark { --bg: #1a1a1a; --card: #2d2d2d; --text: #eee; --border: #444; --key-bg: #444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 20px; transition: 0.3s; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap:10px; }
+        .title { font-size: 26px; font-weight: bold; }
+        .opt-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); }
+        .btn { padding: 8px 14px; border-radius: 6px; border: none; background: var(--primary); color: #fff; font-size:14px; cursor: pointer; }
+        .btn.stop { background: #ff4d4f; }
+        .btn.ghost { background: #999; }
+        .btn.hint { background: #ff7d00; }
+        .hint-row { margin-top:10px; display:none; }
+        .hint-row.show { display:block; }
+        .finger-wrap { display: flex; justify-content: center; gap: 60px; margin-bottom: 35px; }
+        .hand { display: flex; gap: 6px; }
+        .finger { width: 38px; height: 65px; line-height: 65px; text-align: center; background: var(--key-bg); border-radius: 8px; font-size:13px; font-weight:bold; transition: 0.2s; }
+        .finger.hit { background: var(--finger-active); color:#fff; }
+        .stat-bar { display: flex; gap: 20px; background: var(--card); padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .stat-item { font-size: 15px; }
+        .stat-item span { font-weight: bold; color: var(--primary); }
+        .time-item { display: none; }
+        .time-item.show { display: inline-block; }
+        .practice-box { background: var(--card); padding: 35px 30px; border-radius: 12px; box-shadow: 0 2px 12px #00000010; text-align: center; margin-bottom: 25px; }
+        .zh-word { font-size: 32px; color: var(--primary); margin-bottom: 15px; font-weight: bold; }
+        .target-text { font-size: 28px; line-height: 1.8; margin-bottom: 25px; letter-spacing: 2px; }
+        .error-text { color: var(--error); }
+        #input { width: 100%; font-size: 22px; padding: 14px; border: 2px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); text-align: center; outline: none; }
+        .keyboard { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+        .key-row { display: flex; gap: 5px; }
+        .key { width: 46px;height: 46px; background: var(--key-bg); border-radius: 5px; display: flex;align-items: center;justify-content: center; font-size: 15px;user-select: none;transition: 0.15s; }
+        .key.w1 { width: 80px; }
+        .key.w2 { width: 280px; }
+        .key.hint { background: var(--hint-red); }
+        .key.ok { background: var(--correct-green); color:#fff; }
+        .key.active { background: var(--key-active);color: #fff; }
+        .score-history { margin-top: 25px; background: var(--card); padding: 20px; border-radius: 10px; }
+        #errorWordsPreview { margin-top:10px; font-size:13px; color:#666; max-height:150px; overflow-y:auto; }
+    </style>
+</head>
+<body class="green">
+    <div class="container">
+        <div class="top-bar">
+            <div class="title">零基础盲打练习｜英语默写商用版</div>
+            <div class="opt-row">
+                <select id="modeSel">
+                    <option value="dictation" selected>英语默写模式</option>
+                    <option value="word">单词练习</option>
+                    <option value="sentence">短句练习</option>
+                    <option value="wrong">错误单词专项练习</option>
+                </select>
+                <select id="wrongRangeSel" style="display:none;">
+                    <option value="week">近一周出错</option>
+                    <option value="month">近一个月出错</option>
+                </select>
+                <select id="themeSel">
+                    <option value="green" selected>护眼绿</option>
+                    <option value="light">浅色主题</option>
+                    <option value="dark">深色主题</option>
+                </select>
+                <select id="volumeSel">
+                    <option value="0">静音</option>
+                    <option value="0.3">小音量</option>
+                    <option value="0.6" selected>中音量</option>
+                    <option value="1.0">大音量</option>
+                </select>
+                <button class="btn ghost" id="showTimeBtn">显示时长</button>
+                <button class="btn hint" id="hintBtn">提示单词</button>
+                <button class="btn" id="startBtn">开始练习</button>
+                <button class="btn stop" id="stopBtn">停止练习</button>
+            </div>
+        </div>
+
+        <div class="finger-wrap">
+            <div class="hand left-hand">
+                <div class="finger" data-finger="l1">左手小</div>
+                <div class="finger" data-finger="l2">左手无</div>
+                <div class="finger" data-finger="l3">左手中</div>
+                <div class="finger" data-finger="l4">左手食</div>
+            </div>
+            <div class="hand right-hand">
+                <div class="finger" data-finger="r1">右手食</div>
+                <div class="finger" data-finger="r2">右手中</div>
+                <div class="finger" data-finger="r3">右手无</div>
+                <div class="finger" data-finger="r4">右手小</div>
+            </div>
+        </div>
+
+        <div class="stat-bar">
+            <div class="stat-item time-item" id="timeWrap">用时：<span id="time">0s</span></div>
+            <div class="stat-item">打字速度：<span id="wpm">0</span> WPM</div>
+            <div class="stat-item">正确率：<span id="rate">100%</span></div>
+            <div class="stat-item">已完成：<span id="done">0</span> 题</div>
+        </div>
+
+        <div class="practice-box">
+            <div class="zh-word" id="zhWord"></div>
+            <div class="target-text" id="targetText"></div>
+            <input type="text" id="input" autocomplete="off" spellcheck="false" placeholder="点击开始/回车 开始练习" disabled />
+            <div style="margin-top:10px;font-size:14px;color:#666">默写模式输入英文后按回车确认</div>
+            <div class="hint-row" id="hintRow">提示：<span id="hintWordText"></span></div>
+        </div>
+
+        <div class="keyboard" id="keyboard">
+            <div class="key-row">
+                <div class="key">`</div><div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key">4</div><div class="key">5</div>
+                <div class="key">6</div><div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key">0</div><div class="key">-</div><div class="key">=</div>
+            </div>
+            <div class="key-row">
+                <div class="key w1">Tab</div>
+                <div class="key">q</div><div class="key">w</div><div class="key">e</div><div class="key">r</div><div class="key">t</div><div class="key">y</div>
+                <div class="key">u</div><div class="key">i</div><div class="key">o</div><div class="key">p</div><div class="key">[</div><div class="key">]</div>
+            </div>
+            <div class="key-row">
+                <div class="key w1">Caps</div>
+                <div class="key">a</div><div class="key">s</div><div class="key">d</div><div class="key">f</div><div class="key">g</div><div class="key">h</div>
+                <div class="key">j</div><div class="key">k</div><div class="key">l</div><div class="key">;</div><div class="key">'</div>
+            </div>
+            <div class="key-row">
+                <div class="key w1">Shift</div>
+                <div class="key">z</div><div class="key">x</div><div class="key">c</div><div class="key">v</div><div class="key">b</div><div class="key">n</div>
+                <div class="key">m</div><div class="key">,</div><div class="key">.</div><div class="key">/</div>
+            </div>
+            <div class="key-row">
+                <div class="key w2">Space</div>
+            </div>
+        </div>
+
+        <div class="score-history">
+            <h3>本次练习统计</h3>
+            <div id="scoreInfo"></div>
+            <div id="errorWordsPreview"></div>
+        </div>
+    </div>
+
+    <script>
+        const keyToFinger = {
+            'q':'l1','a':'l1','z':'l1','1':'l1',
+            'w':'l2','s':'l2','x':'l2','2':'l2',
+            'e':'l3','d':'l3','c':'l3','3':'l3',
+            'r':'l4','t':'l4','f':'l4','g':'l4','v':'l4','b':'l4','4':'l4','5':'l4',
+            'y':'r1','u':'r1','h':'r1','j':'r1','n':'r1','m':'r1','6':'r1','7':'r1',
+            'i':'r2','k':'r2',',':'r2','8':'r2',
+            'o':'r3','l':'r3','.':'r3','9':'r3',
+            'p':'r4',';':'r4','\'':'r4','/':'r4','0':'r4'
+        };
+
+        const wordList = ["hello", "world", "apple", "banana", "water", "sun", "moon", "book", "desk", "tree"];
+        const sentenceList = [
+            "I want to learn touch typing",
+            "Practice makes perfect every day",
+            "Fast typing improves work efficiency",
+            "Focus on every key you press"
+        ];
+
+        const dictationList = [
+            {zh:"友好的,亲切的",en:"nice"},{zh:"害羞的",en:"shy"},{zh:"酷的",en:"cool"},
+            {zh:"可爱的",en:"cute"},{zh:"淘气的",en:"naughty"},{zh:"一点点",en:"a bit"},
+            {zh:"安静的",en:"quiet"},{zh:"聪明的",en:"clever"},{zh:"不好的,坏的",en:"bad"},
+            {zh:"大的",en:"big"},{zh:"小的",en:"little"},{zh:"城市",en:"city"},
+            {zh:"美丽的",en:"beautiful"},{zh:"古老的",en:"old"},{zh:"著名的",en:"famous"},
+            {zh:"家庭",en:"family"},{zh:"父亲,爸爸",en:"father"},{zh:"母亲,妈妈",en:"mother"},
+            {zh:"祖父,外祖父",en:"grandfather"},{zh:"祖母,外祖母",en:"grandmother"},{zh:"叔叔,伯父",en:"uncle"},
+            {zh:"阿姨,姑姑",en:"aunt"},{zh:"堂兄弟,表姐妹",en:"cousin"},{zh:"年轻的",en:"young"},
+            {zh:"年老的",en:"old"},{zh:"强壮的",en:"strong"},{zh:"长的",en:"long"},
+            {zh:"短的",en:"short"},{zh:"头发",en:"hair"},{zh:"那时",en:"then"},
+            {zh:"是,存在(am/is的过去式)",en:"was"},{zh:"是,存在(are的过去式)",en:"were"},{zh:"健康的",en:"healthy"},
+            {zh:"干净的",en:"clean"},{zh:"脏的",en:"dirty"},{zh:"昨天",en:"yesterday"},
+            {zh:"在,向",en:"to"},{zh:"太阳",en:"sun"},{zh:"出来",en:"out"},
+            {zh:"玩",en:"play"},{zh:"游戏",en:"game"},{zh:"帮助",en:"help"},
+            {zh:"跳舞",en:"dance"},{zh:"唱歌",en:"sing"},{zh:"画画",en:"draw"},
+            {zh:"游泳",en:"swim"},{zh:"飞",en:"fly"},{zh:"步行",en:"walk"},
+            {zh:"骑",en:"ride"},{zh:"吃",en:"eat"},{zh:"喝",en:"drink"},
+            {zh:"看",en:"watch"},{zh:"做",en:"make"},{zh:"电话,打电话",en:"phone"},
+            {zh:"电脑",en:"computer"},{zh:"爱,喜欢",en:"love"},{zh:"作业",en:"homework"},
+            {zh:"周末",en:"weekend"}
+        ];
+
+        const ERROR_WORDS_KEY = "typing_error_words";
+        function getErrorWords(){
+            let data = localStorage.getItem(ERROR_WORDS_KEY);
+            if(!data) return [];
+            try{ return JSON.parse(data); }catch(e){ return []; }
+        }
+        function saveErrorWords(arr){ localStorage.setItem(ERROR_WORDS_KEY, JSON.stringify(arr)); }
+        function recordErrorWord(zh, en){
+            let list = getErrorWords();
+            let now = new Date().toLocaleString();
+            let ts = Date.now();
+            let idx = list.findIndex(i=>i.en === en);
+            if(idx>-1){
+                list[idx].lastErrorTime = now;
+                list[idx].lastErrorTs = ts;
+                list[idx].count++;
+            }else{
+                list.push({zh, en, firstErrorTime:now, lastErrorTime:now, lastErrorTs:ts, count:1});
+            }
+            saveErrorWords(list);
+            showErrorPreview();
+        }
+        function showErrorPreview(){
+            let list = getErrorWords();
+            let html = "<hr><div>已记录错误单词："+list.length+"个</div>";
+            list.forEach(w=>{
+                html += `<div>${w.zh} → ${w.en} | 错 ${w.count}次 | 最后：${w.lastErrorTime}</div>`;
+            });
+            document.getElementById("errorWordsPreview").innerHTML = html;
+        }
+        function getWrongWordsByRange(range){
+            let list = getErrorWords();
+            let now = Date.now();
+            let week = 7*24*60*60*1000;
+            let month = 30*24*60*60*1000;
+            if(range === "week") return list.filter(i=> now - i.lastErrorTs <= week);
+            if(range === "month") return list.filter(i=> now - i.lastErrorTs <= month);
+            return list;
+        }
+
+        let currentText = "";
+        let currentZh = "";
+        let currentEn = "";
+        let currentIndex = 0;
+        let startTime = null;
+        let timer = null;
+        let totalCount = 0;
+        let rightCount = 0;
+        let doneNum = 0;
+        let isStarted = false;
+        let timeVisible = false;
+        let hintShowed = false;
+
+        let audioCtx = null;
+        let masterGain = null;
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = parseFloat(document.getElementById('volumeSel').value);
+            masterGain.connect(audioCtx.destination);
+        }
+        function playKeySound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 600;
+            gain.gain.value = 0.15;
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.02);
+        }
+        document.getElementById('volumeSel').addEventListener('change', function () {
+            if (masterGain) masterGain.gain.value = parseFloat(this.value);
+        });
+
+        function speakWord(text) {
+            if(!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = "en-US";
+            utter.rate = 0.9;
+            window.speechSynthesis.speak(utter);
+        }
+
+        const targetEl = document.getElementById("targetText");
+        const zhWordEl = document.getElementById("zhWord");
+        const inputEl = document.getElementById("input");
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const showTimeBtn = document.getElementById("showTimeBtn");
+        const timeWrap = document.getElementById("timeWrap");
+        const modeSel = document.getElementById("modeSel");
+        const wrongRangeSel = document.getElementById("wrongRangeSel");
+        const themeSel = document.getElementById("themeSel");
+        const fingers = document.querySelectorAll(".finger");
+        const keys = document.querySelectorAll(".key");
+        const hintBtn = document.getElementById("hintBtn");
+        const hintRow = document.getElementById("hintRow");
+        const hintWordText = document.getElementById("hintWordText");
+
+        function clearAllHint() {
+            keys.forEach(k=>k.classList.remove("hint","ok"));
+            fingers.forEach(f=>f.classList.remove("hit"));
+        }
+        function hideWordHint(){
+            hintRow.classList.remove("show");
+            hintWordText.innerText = "";
+            hintShowed = false;
+        }
+
+        function showNextHint() {
+            clearAllHint();
+            if(modeSel.value === "dictation" || modeSel.value === "wrong") return;
+            if(currentIndex >= currentText.length) return;
+            const nextChar = currentText[currentIndex].toLowerCase();
+            keys.forEach(k=>{
+                if(k.innerText.toLowerCase() === nextChar) k.classList.add("hint");
+            });
+            const fid = keyToFinger[nextChar];
+            if(fid) document.querySelector(`.finger[data-finger="${fid}"]`).classList.add("hit");
+        }
+
+        themeSel.onchange = () => { document.body.className = themeSel.value; };
+        showTimeBtn.onclick = () => {
+            timeVisible = !timeVisible;
+            timeWrap.classList.toggle("show", timeVisible);
+            showTimeBtn.innerText = timeVisible ? "隐藏时长" : "显示时长";
+        };
+
+        modeSel.addEventListener("change",function(){
+            let v = this.value;
+            hintBtn.style.display = (v === "dictation") ? "inline-block" : "none";
+            wrongRangeSel.style.display = (v === "wrong") ? "inline-block" : "none";
+            resetAll();
+        });
+
+        // 提示按钮核心功能
+        hintBtn.addEventListener("click",function(){
+            if(!isStarted || !currentEn) return;
+            // 直接显示+朗读
+            hintWordText.innerText = currentEn;
+            hintRow.classList.add("show");
+            hintShowed = true;
+            speakWord(currentEn);
+        });
+
+        function nextText() {
+            clearAllHint();
+            hideWordHint();
+            const mode = modeSel.value;
+            if(mode === "dictation"){
+                const rand = dictationList[Math.floor(Math.random() * dictationList.length)];
+                currentZh = rand.zh; currentEn = rand.en; currentText = currentEn;
+                zhWordEl.innerText = currentZh; targetEl.innerText = "";
+            }else if(mode === "wrong"){
+                let range = wrongRangeSel.value;
+                let wrongList = getWrongWordsByRange(range);
+                if(wrongList.length === 0){ alert("暂无该时间段错误单词"); resetAll(); return; }
+                const rand = wrongList[Math.floor(Math.random() * wrongList.length)];
+                currentZh = rand.zh; currentEn = rand.en; currentText = currentEn;
+                zhWordEl.innerText = currentZh; targetEl.innerText = "";
+            }else if(mode === "word"){
+                currentText = wordList[Math.floor(Math.random() * wordList.length)];
+                zhWordEl.innerText = ""; targetEl.innerText = currentText;
+            }else{
+                currentText = sentenceList[Math.floor(Math.random() * sentenceList.length)];
+                zhWordEl.innerText = ""; targetEl.innerText = currentText;
+            }
+            currentIndex = 0; inputEl.value = ""; showNextHint();
+        }
+
+        function startTimer() { if(!startTime) startTime = Date.now(); timer = setInterval(updateTime, 1000); }
+        function updateTime() { const s = Math.floor((Date.now() - startTime) / 1000); document.getElementById("time").innerText = s + "s"; }
+        function calcRate() { let rate = totalCount === 0 ? 100 : Math.floor(rightCount / totalCount * 100); document.getElementById("rate").innerText = rate + "%"; }
+
+        function checkDictation() {
+            const val = inputEl.value.trim().toLowerCase();
+            totalCount++;
+            if(val === currentEn){
+                rightCount++;
+                speakWord(currentEn);
+                doneNum++;
+                document.getElementById("done").innerText = doneNum;
+                updateScore();
+                nextText();
+            }else{
+                recordErrorWord(currentZh, currentEn);
+                inputEl.value = "";
+            }
+            calcRate();
+        }
+
+        inputEl.addEventListener("keydown", function(e) {
+            if(!isStarted) return;
+            const mode = modeSel.value;
+            if(mode === "dictation" || mode === "wrong"){
+                if(e.key === "Enter"){ e.preventDefault(); checkDictation(); }
+                return;
+            }
+            const pressKey = e.key.toLowerCase();
+            const needKey = currentText[currentIndex].toLowerCase();
+            if(e.key === "Backspace" || e.key === "Enter") return;
+            if(pressKey !== needKey) e.preventDefault();
+        });
+
+        inputEl.addEventListener("input", e=>{
+            if(!isStarted) return;
+            const mode = modeSel.value;
+            if(mode === "dictation" || mode === "wrong") {
+                if(inputEl.value.trim().toLowerCase() === currentEn && hintShowed) hideWordHint();
+                return;
+            }
+            const val = inputEl.value;
+            const correctChar = currentText[currentIndex];
+            if(val.length && val[val.length-1] === correctChar) {
+                initAudio(); playKeySound();
+                const c = correctChar.toLowerCase();
+                keys.forEach(k=>{ if(k.innerText.toLowerCase() === c) { k.classList.remove("hint"); k.classList.add("ok"); } });
+                rightCount++; currentIndex++; showNextHint();
+            }
+            if(val.length > 0 && val[val.length-1] !== correctChar) inputEl.value = val.slice(0, -1);
+            let html = "";
+            for(let i=0;i<currentText.length;i++){
+                const t = currentText[i]; const v = val[i];
+                html += (v === undefined || v === t) ? t : `<span class="error-text">${t}</span>`;
+            }
+            targetEl.innerHTML = html;
+            calcRate();
+            if(val === currentText){
+                doneNum++; document.getElementById("done").innerText = doneNum;
+                nextText(); updateScore();
+            }
+        });
+
+        function updateScore(){
+            const sec = startTime ? Math.floor((Date.now() - startTime)/1000) : 0;
+            const rate = totalCount===0?100:Math.floor(rightCount/totalCount*100);
+            document.getElementById("scoreInfo").innerHTML =
+            `完成题数：${doneNum} &nbsp;&nbsp; 总用时：${sec}秒 &nbsp;&nbsp; 综合正确率：${rate}%`;
+        }
+
+        function resetAll() {
+            clearInterval(timer); startTime = null; totalCount = 0; rightCount = 0; doneNum = 0;
+            currentIndex = 0; isStarted = false; hintShowed = false;
+            document.getElementById("time").innerText = "0s";
+            document.getElementById("wpm").innerText = "0";
+            document.getElementById("rate").innerText = "100%";
+            document.getElementById("done").innerText = "0";
+            inputEl.disabled = true;
+            inputEl.placeholder = "点击开始/回车 开始练习";
+            zhWordEl.innerText = ""; targetEl.innerText = "";
+            hideWordHint(); clearAllHint(); updateScore();
+        }
+
+        function startAction() {
+            if(isStarted) return;
+            isStarted = true; inputEl.disabled = false; inputEl.focus();
+            startTimer(); nextText(); showErrorPreview();
+        }
+
+        startBtn.onclick = startAction;
+        stopBtn.onclick = resetAll;
+
+        document.addEventListener("keydown", function(e){
+            if(e.key === "Enter"){ if(!isStarted){ e.preventDefault(); startAction(); } }
+            if(e.key === "Escape"){ e.preventDefault(); resetAll(); }
+        });
+
+        // 强制默认显示提示按钮
+        hintBtn.style.display = "inline-block";
+        resetAll();
+    </script>
+</body>
+</html>
